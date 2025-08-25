@@ -568,8 +568,10 @@
                 <ul class="sub-nav">
                     <li><a href="#" onclick="showCalculator('coal-hydrogen')">煤制氢成本</a></li>
                     <li><a href="#" onclick="showCalculator('gas-hydrogen')">天然气制氢成本</a></li>
-                    <li><a href="#" onclick="showCalculator('industrial-hydrogen')">工业副产氢</a></li>
-                    <li><a href="#" onclick="showCalculator('petroleum-hydrogen')">石油基制氢</a></li>
+                    <li><a href="#" onclick="showCalculator('industrial-hydrogen')">工业副产氢成本</a></li>
+                    <li><a href="#" onclick="showCalculator('petroleum-hydrogen')">石油基制氢成本</a></li>
+                    <li><a href="#" onclick="showCalculator('coal-ccus')">煤制氢+CCUS成本</a></li>
+                    <li><a href="#" onclick="showCalculator('gas-ccus')">天然气制氢+CCUS成本</a></li>
                 </ul>
             </li>
             <li>
@@ -655,8 +657,10 @@
                 <div class="calculator-tabs">
                     <div class="calculator-tab active" onclick="showCalculator('coal-hydrogen')">煤制氢成本</div>
                     <div class="calculator-tab" onclick="showCalculator('gas-hydrogen')">天然气制氢成本</div>
-                    <div class="calculator-tab" onclick="showCalculator('industrial-hydrogen')">工业副产氢</div>
-                    <div class="calculator-tab" onclick="showCalculator('petroleum-hydrogen')">石油基制氢</div>
+                    <div class="calculator-tab" onclick="showCalculator('industrial-hydrogen')">工业副产氢成本</div>
+                    <div class="calculator-tab" onclick="showCalculator('petroleum-hydrogen')">石油基制氢成本</div>
+                    <div class="calculator-tab" onclick="showCalculator('coal-ccus')">煤制氢+CCUS成本</div>
+                    <div class="calculator-tab" onclick="showCalculator('gas-ccus')">天然气制氢+CCUS成本</div>
                 </div>
 
                 <!-- 煤制氢成本计算器 -->
@@ -664,24 +668,40 @@
                     <h3><i class="fas fa-industry"></i> 煤制氢成本计算</h3>
                     <div class="calculator-grid">
                         <div class="input-group">
-                            <label for="coal-price">煤炭价格 (元/吨)</label>
+                            <label for="project-investment">项目投资 (百万元)</label>
+                            <input type="number" id="project-investment" placeholder="输入项目投资金额">
+                        </div>
+                        <div class="input-group">
+                            <label for="production-scale">制氢规模 (kg/年)</label>
+                            <input type="number" id="production-scale" placeholder="输入年制氢量">
+                        </div>
+                        <div class="input-group">
+                            <label for="project-lifetime">项目寿命 (年)</label>
+                            <input type="number" id="project-lifetime" placeholder="输入项目寿命">
+                        </div>
+                        <div class="input-group">
+                            <label for="coal-price">煤价 (元/kg)</label>
                             <input type="number" id="coal-price" placeholder="输入煤炭价格">
                         </div>
                         <div class="input-group">
-                            <label for="coal-consumption">煤耗率 (吨/千克氢)</label>
-                            <input type="number" id="coal-consumption" placeholder="输入煤耗率">
+                            <label for="electricity-price">电价 (元/kWh)</label>
+                            <input type="number" id="electricity-price" placeholder="输入电力价格">
                         </div>
                         <div class="input-group">
-                            <label for="water-consumption">水耗率 (吨/千克氢)</label>
-                            <input type="number" id="water-consumption" placeholder="输入水耗率">
-                        </div>
-                        <div class="input-group">
-                            <label for="water-price">水价格 (元/吨)</label>
+                            <label for="water-price">水价 (元/吨)</label>
                             <input type="number" id="water-price" placeholder="输入水价格">
                         </div>
                         <div class="input-group">
-                            <label for="operation-cost">运营成本 (元/千克氢)</label>
-                            <input type="number" id="operation-cost" placeholder="输入运营成本">
+                            <label for="oxygen-price">液氧价 (元/kg)</label>
+                            <input type="number" id="oxygen-price" placeholder="输入液氧价格">
+                        </div>
+                        <div class="input-group">
+                            <label for="steam-price">蒸汽价 (元/kg)</label>
+                            <input type="number" id="steam-price" placeholder="输入蒸汽价格">
+                        </div>
+                        <div class="input-group">
+                            <label for="staff-count">员工数量 (人)</label>
+                            <input type="number" id="staff-count" placeholder="输入员工数量">
                         </div>
                     </div>
                     <button class="calculate-btn" onclick="calculateCoalHydrogen()">计算成本</button>
@@ -691,6 +711,7 @@
                         <div class="result-value" id="coal-hydrogen-result">0.00 元/千克</div>
                     </div>
                 </div>
+
 
                 <!-- 其他计算器内容类似，省略以保持代码简洁 -->
                 <div id="gas-hydrogen" class="tab-content">
@@ -707,6 +728,18 @@
                     <h3><i class="fas fa-oil-well"></i> 石油基制氢成本计算</h3>
                     <p>石油基制氢成本计算器内容...</p>
                 </div>
+
+                <div id="coal-ccus" class="tab-content">
+                    <h3><i class="fas fa-industry"></i> 煤制氢+CCUS成本计算</h3>
+                    <p>煤制氢+CCUS成本计算器内容...</p>
+                </div>
+
+                <div id="gas-ccus" class="tab-content">
+                    <h3><i class="fas fa-fire"></i> 天然气制氢+CCUS成本计算</h3>
+                    <p>天然气制氢+CCUS成本计算器内容...</p>
+                </div>
+
+
             </div>
         </div>
 
@@ -746,6 +779,18 @@
     </main>
 
     <script>
+            // 页面加载完成后隐藏加载动画
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loader = document.getElementById('loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(function() {
+                        loader.style.display = 'none';
+                    }, 500);
+                }
+            }, 1000);
+        });
         // 显示页面函数
         function showPage(pageId) {
             // 隐藏所有页面
@@ -798,20 +843,44 @@
             document.querySelector('.sidebar').classList.toggle('active');
         }
 
-        // 煤制氢成本计算函数
+         // 煤制氢成本计算函数
         function calculateCoalHydrogen() {
             // 获取输入值
+            const projectInvestment = parseFloat(document.getElementById('project-investment').value) || 0;
+            const productionScale = parseFloat(document.getElementById('production-scale').value) || 0;
+            const projectLifetime = parseFloat(document.getElementById('project-lifetime').value) || 0;
             const coalPrice = parseFloat(document.getElementById('coal-price').value) || 0;
-            const coalConsumption = parseFloat(document.getElementById('coal-consumption').value) || 0;
-            const waterConsumption = parseFloat(document.getElementById('water-consumption').value) || 0;
+            const electricityPrice = parseFloat(document.getElementById('electricity-price').value) || 0;
             const waterPrice = parseFloat(document.getElementById('water-price').value) || 0;
-            const operationCost = parseFloat(document.getElementById('operation-cost').value) || 0;
+            const oxygenPrice = parseFloat(document.getElementById('oxygen-price').value) || 0;
+            const steamPrice = parseFloat(document.getElementById('steam-price').value) || 0;
+            const staffCount = parseFloat(document.getElementById('staff-count').value) || 0;
 
-            // 简单计算示例（实际计算公式需要根据需求调整）
-            const cost = coalPrice * coalConsumption + waterConsumption * waterPrice + operationCost;
+            // 固定参数
+            const coalConsumptionRate = 8.9; // kg/kg
+            const electricityConsumptionRate = 0.66; // kWh/kg
+            const waterConsumptionRate = 10.5; // kg/kg
+            const oxygenConsumptionRate = 5.47; // kg/kg
+            const steamConsumptionRate = 10.413; // kg/kg
+            const avgAnnualSalary = 113734.8; // 元/年
+            const annualizationFactor = 0.127;
+            const maintenanceCost = 22531572; // 元
+
+            // 计算单位制氢成本
+            const materialCost = coalPrice * coalConsumptionRate +
+                               electricityPrice * electricityConsumptionRate +
+                               (waterPrice / 1000) * waterConsumptionRate + // 水价转换为元/kg
+                               oxygenPrice * oxygenConsumptionRate +
+                               steamPrice * steamConsumptionRate;
+
+            const fixedCost = (staffCount * avgAnnualSalary +
+                             projectInvestment * annualizationFactor * 1000000 +
+                             maintenanceCost) / productionScale;
+
+            const totalCost = materialCost + fixedCost;
 
             // 显示结果
-            document.getElementById('coal-hydrogen-result').textContent = cost.toFixed(2) + ' 元/千克';
+            document.getElementById('coal-hydrogen-result').textContent = totalCost.toFixed(2) + ' 元/千克';
         }
         
         // 页面加载时初始化
@@ -828,6 +897,5 @@
         });
     </script>
 </body>
-
 </html>
 

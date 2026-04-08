@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>质子交换膜电解水制氢（PEM）</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="shared.js"></script>
+</head>
+<body>
+<h2><i class="fas fa-bolt"></i> 质子交换膜电解水制氢（PEM）成本计算（LCOH）</h2>
+<div class="formula-box"><i class="fas fa-info-circle"></i>
+  <span>PEM电解响应速度快、适配可再生能源波动，但单位造价高于ALK，约5000–7000元/kW，系统寿命15年左右。电耗约55–60 kWh/kg H₂，膜材料和贵金属催化剂（铱、铂）推高了设备成本。</span>
+</div>
+<div id="province-row"></div>
+<div class="calc-grid">
+  <div class="sec-label">资本参数</div>
+  <div class="input-group"><label>电解槽装机容量 (MW)</label>
+    <div class="input-wrapper"><input type="number" id="power_mw" value="100" step="1" onchange="updateCAPEX()"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setValAndUpdate('power_mw',50)">50 MW</span><span class="ref-badge" onclick="setValAndUpdate('power_mw',100)">100 MW</span><span class="ref-badge" onclick="setValAndUpdate('power_mw',500)">500 MW</span></div>
+  </div>
+  <div class="input-group"><label>电解槽单位造价 (元/kW)</label>
+    <div class="input-wrapper"><input type="number" id="capex_kw" value="6000" step="100" onchange="updateCAPEX()"></div>
+    <div class="ref-hint"><span class="ref-label">PEM参考：</span><span class="ref-badge" onclick="setValAndUpdate('capex_kw',5000)">5000</span><span class="ref-badge" onclick="setValAndUpdate('capex_kw',6000)">6000</span><span class="ref-badge" onclick="setValAndUpdate('capex_kw',7000)">7000</span></div>
+  </div>
+  <div class="input-group"><label>项目总投资 (百万元) — 含BoP、EPC</label>
+    <div class="input-wrapper"><input type="number" id="capex" value="810" step="1"></div>
+    <div class="ref-hint"><span class="ref-label">自动估算（装机×造价×1.35），可手动修改</span></div>
+  </div>
+  <div class="input-group"><label>折现率 WACC (%)</label>
+    <div class="input-wrapper"><input type="number" id="wacc" value="8" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('wacc',8)">8%</span><span class="ref-badge" onclick="setVal('wacc',10)">10%</span></div>
+  </div>
+  <div class="input-group"><label>项目寿命 (年)</label>
+    <div class="input-wrapper"><input type="number" id="life" value="15"></div>
+    <div class="ref-hint"><span class="ref-label">PEM参考：</span><span class="ref-badge" onclick="setVal('life',15)">15年</span><span class="ref-badge" onclick="setVal('life',20)">20年</span></div>
+  </div>
+  <div class="input-group"><label>年运行小时数 (h/年)</label>
+    <div class="input-wrapper"><input type="number" id="flh" value="4000" onchange="updateScale()"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setValAndUpdate('flh',3000)">3000h</span><span class="ref-badge" onclick="setValAndUpdate('flh',4000)">4000h</span><span class="ref-badge" onclick="setValAndUpdate('flh',8000)">8000h</span></div>
+  </div>
+  <div class="input-group"><label>年制氢规模 (kg/年) — 自动估算</label>
+    <div class="input-wrapper"><input type="number" id="scale" value="68965517"></div>
+    <div class="ref-hint"><span class="ref-label">可手动修改</span></div>
+  </div>
+  <div class="input-group"><label>年维护率 (% CAPEX/年)</label>
+    <div class="input-wrapper"><input type="number" id="opex_rate" value="3" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-label">PEM参考：</span><span class="ref-badge" onclick="setVal('opex_rate',3)">3%</span><span class="ref-badge" onclick="setVal('opex_rate',3.5)">3.5%</span></div>
+  </div>
+  <hr class="sec-divider">
+  <div class="sec-label">省级价格参数</div>
+  <div class="input-group"><label>工业电价 (元/kWh) — 最核心参数</label>
+    <div class="input-wrapper"><input type="number" id="elec_p" placeholder="选省份自动填入" step="0.001"></div>
+    <div class="ref-hint" id="ref_elec"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('elec_p',0.699)">0.699</span></div>
+  </div>
+  <div class="input-group"><label>工业水价 (元/吨)</label>
+    <div class="input-wrapper"><input type="number" id="water_p" placeholder="选省份自动填入" step="0.1"></div>
+    <div class="ref-hint" id="ref_water"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('water_p',5.32)">5.32</span></div>
+  </div>
+  <hr class="sec-divider">
+  <div class="sec-label">人工成本（省级）</div>
+  <div class="input-group"><label>员工数量 (人)</label>
+    <div class="input-wrapper"><input type="number" id="staff" value="25"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('staff',25)">25人</span></div>
+  </div>
+  <div class="input-group"><label>年均工资 (元/人/年)</label>
+    <div class="input-wrapper"><input type="number" id="salary" placeholder="选省份自动填入"></div>
+    <div class="ref-hint" id="ref_salary"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('salary',113735)">113,735</span></div>
+  </div>
+  <hr class="sec-divider">
+  <div class="sec-label">工艺消耗系数（PEM）</div>
+  <div class="input-group"><label>系统电耗 (kWh/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="q_elec" value="58" step="0.5"></div>
+    <div class="ref-hint"><span class="ref-label">PEM默认值：</span><span class="ref-badge" onclick="setVal('q_elec',55)">55 kWh/kg H₂</span><span class="ref-badge" onclick="setVal('q_elec',58)">58 kWh/kg H₂</span><span class="ref-badge" onclick="setVal('q_elec',60)">60 kWh/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>水耗系数 (kg纯水/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="q_water" value="10.0" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_water',10.0)">10.0 kg/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>辅材/膜更换成本 (元/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="other" value="0.35" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值（含膜更换摊销）：</span><span class="ref-badge" onclick="setVal('other',0.35)">0.35 元/kg H₂</span></div>
+  </div>
+</div>
+<button class="calc-btn" onclick="calculate()"><i class="fas fa-calculator" style="margin-right:7px"></i>计算 LCOH</button>
+<div class="result-section" id="result-section">
+  <div class="result-top">
+    <div class="result-main"><div class="rl">质子交换膜（PEM）LCOH</div><div class="rv" id="result-lcoh">—</div><div class="ru">元 / kg H₂</div></div>
+    <div class="result-sub-cards">
+      <div class="result-sub"><span class="sl">变动原料成本（电+水）</span><span class="sv" id="result-variable">—</span></div>
+      <div class="result-sub"><span class="sl">资本年化摊销</span><span class="sv" id="result-capex">—</span></div>
+      <div class="result-sub"><span class="sl">固定运营成本摊销</span><span class="sv" id="result-fixed">—</span></div>
+    </div>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">各成本项占 LCOH 的比例</div>
+    <div class="chart-inner">
+      <div class="chart-canvas-wrap"><canvas id="costPieChart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('province-row').innerHTML=`<div class="province-selector-row"><label><i class="fas fa-map-marker-alt"></i>&nbsp; 选择省份</label><select class="province-select" id="province-select" onchange="applyProvince()"><option value="">-- 请选择省份（自动填入参考值）--</option>${Object.keys(PROVINCE_DATA).map(p=>`<option value="${p}">${p}</option>`).join('')}</select><span class="province-hint">选择后各项参考值自动填入，可自行修改</span></div>`;
+function setValAndUpdate(id,val){setVal(id,val);updateCAPEX();}
+function updateCAPEX(){const pw=g('power_mw'),ck=g('capex_kw');if(pw>0&&ck>0)setVal('capex',(pw*1000*ck*1.35/1e6).toFixed(0));updateScale();}
+function updateScale(){const pw=g('power_mw'),fh=g('flh'),qe=g('q_elec');if(pw>0&&fh>0&&qe>0)setVal('scale',Math.round(pw*1000*fh/qe));}
+function applyProvince(){const p=document.getElementById('province-select').value;if(!p)return;const d=PROVINCE_DATA[p];setVal('elec_p',d.elec);setVal('water_p',d.water);setVal('salary',d.salary);document.getElementById('ref_elec').innerHTML=`<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('elec_p',${d.elec})">${d.elec.toFixed(4)} 元/kWh</span>`;document.getElementById('ref_water').innerHTML=`<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('water_p',${d.water})">${d.water.toFixed(2)} 元/吨</span>`;document.getElementById('ref_salary').innerHTML=`<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('salary',${d.salary})">${d.salary.toLocaleString()} 元/年</span>`;}
+function calculate(){const capex=g('capex')*1e6,M=g('scale'),n=g('life');if(!M||!capex||!n){alert('请填写完整资本参数');return;}const crf=calcCRF(g('wacc'),n);const capexKg=capex*crf/M;const laborKg=g('staff')*g('salary')/M;const maintKg=capex*g('opex_rate')/100/M;const fixedKg=laborKg+maintKg;const elecC=g('elec_p')*g('q_elec');const waterC=g('water_p')/1000*g('q_water');const otherC=g('other');const variable=elecC+waterC+otherC;const lcoh=capexKg+fixedKg+variable;showResult(lcoh,variable,capexKg,fixedKg,[{name:'电力消耗',value:elecC,color:PIE_COLORS[1]},{name:'工艺用水',value:waterC,color:PIE_COLORS[4]},{name:'辅材/膜更换',value:otherC,color:PIE_COLORS[5]},{name:'资本年化摊销',value:capexKg,color:PIE_COLORS[6]},{name:'人工成本',value:laborKg,color:PIE_COLORS[7]},{name:'维护成本',value:maintKg,color:PIE_COLORS[8]}]);}
+updateCAPEX();
+</script>
+</body>
+</html>

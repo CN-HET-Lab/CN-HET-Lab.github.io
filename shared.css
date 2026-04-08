@@ -1,0 +1,47 @@
+:root{--primary:#1a5fb4;--secondary:#1c71d8;--accent:#26a269;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI','Microsoft YaHei',sans-serif;}
+body{background:#f4f6fb;color:#333;padding:24px;}
+h2{font-size:20px;color:var(--primary);margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid #e8eef8;display:flex;align-items:center;gap:8px;}
+.formula-box{background:#f0f7ff;border:1px solid #b3d4f5;border-radius:8px;padding:11px 15px;margin-bottom:18px;font-size:13px;color:var(--primary);display:flex;align-items:flex-start;gap:9px;}
+.province-selector-row{display:flex;align-items:center;gap:12px;margin-bottom:22px;padding:13px 18px;background:linear-gradient(135deg,#e8f0fe,#f0f7ff);border-radius:10px;border-left:4px solid var(--primary);flex-wrap:wrap;}
+.province-selector-row label{font-weight:600;color:var(--primary);font-size:14px;white-space:nowrap;}
+.province-select{padding:9px 14px;border:2px solid #c4d4f0;border-radius:8px;font-size:14px;background:white;cursor:pointer;min-width:130px;}
+.province-select:focus{border-color:var(--primary);outline:none;}
+.province-hint{font-size:12px;color:#777;font-style:italic;}
+.calc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px;}
+.input-group{margin-bottom:4px;}
+.input-group label{display:block;margin-bottom:5px;font-weight:500;color:#444;font-size:13px;}
+.input-wrapper input{width:100%;padding:10px 13px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;transition:border .3s;}
+.input-wrapper input:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(26,95,180,.1);}
+.ref-hint{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.ref-badge{background:#e8f5e9;color:#2e7d32;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:500;cursor:pointer;border:1px solid #c8e6c9;transition:all .2s;white-space:nowrap;}
+.ref-badge:hover{background:#2e7d32;color:white;}
+.ref-label{font-size:11px;color:#999;}
+.sec-divider{grid-column:1/-1;border:none;border-top:2px dashed #e8e8e8;margin:8px 0;}
+.sec-label{grid-column:1/-1;font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;padding:4px 0;display:flex;align-items:center;gap:8px;}
+.sec-label::after{content:'';flex:1;height:1px;background:#e0e0e0;}
+.calc-btn{background:linear-gradient(to right,var(--primary),var(--secondary));color:white;border:none;padding:13px 20px;border-radius:8px;cursor:pointer;font-size:15px;font-weight:600;display:block;width:100%;margin-top:18px;letter-spacing:.4px;transition:all .3s;}
+.calc-btn:hover{opacity:.9;transform:translateY(-2px);box-shadow:0 4px 14px rgba(26,95,180,.3);}
+.result-section{margin-top:26px;display:none;}
+.result-section.visible{display:block;}
+.result-top{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:22px;}
+.result-main{flex:1;min-width:200px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:white;border-radius:12px;padding:22px;text-align:center;}
+.result-main .rl{font-size:13px;opacity:.85;margin-bottom:7px;}
+.result-main .rv{font-size:40px;font-weight:700;margin-bottom:3px;}
+.result-main .ru{font-size:15px;opacity:.85;}
+.result-sub-cards{display:flex;flex-direction:column;gap:10px;flex:1;min-width:200px;}
+.result-sub{background:#f7f9fb;border-radius:9px;padding:13px 17px;border-left:4px solid var(--accent);display:flex;justify-content:space-between;align-items:center;}
+.result-sub .sl{font-size:13px;color:#555;font-weight:500;}
+.result-sub .sv{font-size:17px;font-weight:700;color:var(--primary);}
+.chart-container{background:#fafafa;border-radius:11px;padding:18px;}
+.chart-title{font-size:15px;font-weight:600;color:#444;margin-bottom:13px;text-align:center;}
+.chart-inner{display:flex;gap:24px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.chart-canvas-wrap{width:260px;height:260px;flex-shrink:0;}
+.chart-legend{flex:1;min-width:190px;}
+.legend-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid #f0f0f0;}
+.legend-item:last-child{border-bottom:none;}
+.legend-dot{width:13px;height:13px;border-radius:50%;flex-shrink:0;}
+.legend-name{font-size:12px;color:#555;flex:1;}
+.legend-pct{font-size:12px;font-weight:700;color:#333;}
+.legend-val{font-size:11px;color:#888;min-width:76px;text-align:right;}
+@media(max-width:640px){.result-top{flex-direction:column;}.chart-inner{flex-direction:column;}}

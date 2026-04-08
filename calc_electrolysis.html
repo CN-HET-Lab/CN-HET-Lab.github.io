@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>电解水制氢成本计算</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="shared.js"></script>
+</head>
+<body>
+<h2><i class="fas fa-bolt"></i> 电解水制氢成本计算（ALK / PEM，LCOH）</h2>
+
+<div class="formula-box"><i class="fas fa-info-circle"></i>
+  <span>电解水制氢电费占总成本60–75%，为最主要的成本驱动因素。电解槽CAPEX及寿命是第二重要因素。碱性电解（ALK）投资低，PEM电解响应快但投资更高。可切换工艺模式调整参数。</span>
+</div>
+
+<!-- 工艺切换 -->
+<div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+  <button onclick="switchMode('ALK')" id="btn_ALK" style="padding:8px 20px;border-radius:8px;border:2px solid #1a5fb4;background:#1a5fb4;color:white;cursor:pointer;font-size:14px;font-weight:600;">碱性电解 ALK</button>
+  <button onclick="switchMode('PEM')" id="btn_PEM" style="padding:8px 20px;border-radius:8px;border:2px solid #ccc;background:white;color:#666;cursor:pointer;font-size:14px;">质子交换膜 PEM</button>
+</div>
+
+<div id="province-row"></div>
+
+<div class="calc-grid">
+  <div class="sec-label">资本参数（电解槽系统）</div>
+  <div class="input-group"><label>电解槽装机容量 (MW)</label>
+    <div class="input-wrapper"><input type="number" id="power_mw" value="100" step="1" onchange="updateCAPEX()"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setValAndUpdate('power_mw',50)">50 MW</span><span class="ref-badge" onclick="setValAndUpdate('power_mw',100)">100 MW</span><span class="ref-badge" onclick="setValAndUpdate('power_mw',500)">500 MW</span></div>
+  </div>
+  <div class="input-group"><label>电解槽单位造价 (元/kW)</label>
+    <div class="input-wrapper"><input type="number" id="capex_kw" value="3500" step="100" onchange="updateCAPEX()"></div>
+    <div class="ref-hint" id="ref_capex_kw"><span class="ref-label">ALK参考：</span><span class="ref-badge" onclick="setValAndUpdate('capex_kw',3000)">3000</span><span class="ref-badge" onclick="setValAndUpdate('capex_kw',3500)">3500</span></div>
+  </div>
+  <div class="input-group"><label>项目总投资 (百万元) — 含BoP、EPC</label>
+    <div class="input-wrapper"><input type="number" id="capex" value="385" step="1"></div>
+    <div class="ref-hint"><span class="ref-label">（自动估算含BoP+EPC，可手动修改）</span></div>
+  </div>
+  <div class="input-group"><label>折现率 WACC (%)</label>
+    <div class="input-wrapper"><input type="number" id="wacc" value="8" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('wacc',8)">8%</span><span class="ref-badge" onclick="setVal('wacc',10)">10%</span></div>
+  </div>
+  <div class="input-group"><label>项目寿命 (年)</label>
+    <div class="input-wrapper"><input type="number" id="life" value="20"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('life',20)">20年</span><span class="ref-badge" onclick="setVal('life',30)">30年</span></div>
+  </div>
+  <div class="input-group"><label>年运行小时数 (h/年)</label>
+    <div class="input-wrapper"><input type="number" id="flh" value="4000" onchange="updateScale()"></div>
+    <div class="ref-hint"><span class="ref-label">参考范围：</span><span class="ref-badge" onclick="setValAndUpdate('flh',3000)">3000h</span><span class="ref-badge" onclick="setValAndUpdate('flh',4000)">4000h</span><span class="ref-badge" onclick="setValAndUpdate('flh',8000)">8000h</span></div>
+  </div>
+  <div class="input-group"><label>年制氢规模 (kg/年) — 自动估算</label>
+    <div class="input-wrapper"><input type="number" id="scale" value="80000000"></div>
+    <div class="ref-hint"><span class="ref-label">（可手动修改）</span></div>
+  </div>
+  <div class="input-group"><label>年维护率 (% CAPEX/年)</label>
+    <div class="input-wrapper"><input type="number" id="opex_rate" value="2.5" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('opex_rate',2)">2%</span><span class="ref-badge" onclick="setVal('opex_rate',3)">3%</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">省级价格参数</div>
+
+  <div class="input-group"><label>工业电价 (元/kWh) — 最重要参数</label>
+    <div class="input-wrapper"><input type="number" id="elec_p" placeholder="选省份自动填入" step="0.001"></div>
+    <div class="ref-hint" id="ref_elec"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('elec_p',0.699)">0.699</span></div>
+  </div>
+  <div class="input-group"><label>工业水价 (元/吨)</label>
+    <div class="input-wrapper"><input type="number" id="water_p" placeholder="选省份自动填入" step="0.1"></div>
+    <div class="ref-hint" id="ref_water"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('water_p',5.32)">5.32</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">人工成本（省级）</div>
+  <div class="input-group"><label>员工数量 (人)</label>
+    <div class="input-wrapper"><input type="number" id="staff" value="30"></div>
+  </div>
+  <div class="input-group"><label>年均工资 (元/人/年)</label>
+    <div class="input-wrapper"><input type="number" id="salary" placeholder="选省份自动填入"></div>
+    <div class="ref-hint" id="ref_salary"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('salary',113735)">113,735</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">工艺消耗系数（电解水工艺）</div>
+
+  <div class="input-group"><label>系统电耗 (kWh/kg H₂) — 含辅助电耗</label>
+    <div class="input-wrapper"><input type="number" id="q_elec" value="55" step="0.5"></div>
+    <div class="ref-hint" id="ref_q_elec"><span class="ref-label">ALK参考：</span><span class="ref-badge" onclick="setVal('q_elec',55)">55</span><span class="ref-badge" onclick="setVal('q_elec',50)">50</span></div>
+  </div>
+  <div class="input-group"><label>水耗系数 (kg去离子水/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="q_water" value="9.0" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_water',9.0)">9.0 kg去离子水/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>辅材/化学品成本 (元/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="other" value="0.20" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('other',0.20)">0.20 元/kg H₂</span></div>
+  </div>
+</div>
+
+<button class="calc-btn" onclick="calculate()"><i class="fas fa-calculator" style="margin-right:7px"></i>计算 LCOH</button>
+
+<div class="result-section" id="result-section">
+  <div class="result-top">
+    <div class="result-main"><div class="rl">电解水制氢 LCOH</div><div class="rv" id="result-lcoh">—</div><div class="ru">元 / kg H₂</div></div>
+    <div class="result-sub-cards">
+      <div class="result-sub"><span class="sl">变动原料成本（电+水）</span><span class="sv" id="result-variable">—</span></div>
+      <div class="result-sub"><span class="sl">资本年化摊销</span><span class="sv" id="result-capex">—</span></div>
+      <div class="result-sub"><span class="sl">固定运营成本摊销</span><span class="sv" id="result-fixed">—</span></div>
+    </div>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">各成本项占 LCOH 的比例</div>
+    <div class="chart-inner">
+      <div class="chart-canvas-wrap"><canvas id="costPieChart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentMode = 'ALK';
+
+document.getElementById('province-row').innerHTML = `
+<div class="province-selector-row">
+  <label><i class="fas fa-map-marker-alt"></i>&nbsp; 选择省份</label>
+  <select class="province-select" id="province-select" onchange="applyProvince()">
+    <option value="">-- 请选择省份（自动填入参考值）--</option>
+    ${Object.keys(PROVINCE_DATA).map(p=>`<option value="${p}">${p}</option>`).join('')}
+  </select>
+  <span class="province-hint">选择后各项参考值自动填入，可自行修改</span>
+</div>`;
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn_ALK').style.cssText = mode==='ALK' ? 'padding:8px 20px;border-radius:8px;border:2px solid #1a5fb4;background:#1a5fb4;color:white;cursor:pointer;font-size:14px;font-weight:600;' : 'padding:8px 20px;border-radius:8px;border:2px solid #ccc;background:white;color:#666;cursor:pointer;font-size:14px;';
+  document.getElementById('btn_PEM').style.cssText = mode==='PEM' ? 'padding:8px 20px;border-radius:8px;border:2px solid #1a5fb4;background:#1a5fb4;color:white;cursor:pointer;font-size:14px;font-weight:600;' : 'padding:8px 20px;border-radius:8px;border:2px solid #ccc;background:white;color:#666;cursor:pointer;font-size:14px;';
+  if (mode === 'ALK') {
+    setVal('capex_kw', 3500); setVal('q_elec', 55); setVal('life', 20); setVal('opex_rate', 2.5);
+    document.getElementById('ref_capex_kw').innerHTML = '<span class="ref-label">ALK参考：</span><span class="ref-badge" onclick="setValAndUpdate(\'capex_kw\',3000)">3000</span><span class="ref-badge" onclick="setValAndUpdate(\'capex_kw\',3500)">3500</span>';
+    document.getElementById('ref_q_elec').innerHTML = '<span class="ref-label">ALK参考：</span><span class="ref-badge" onclick="setVal(\'q_elec\',55)">55</span><span class="ref-badge" onclick="setVal(\'q_elec\',50)">50</span>';
+  } else {
+    setVal('capex_kw', 6000); setVal('q_elec', 58); setVal('life', 15); setVal('opex_rate', 3);
+    document.getElementById('ref_capex_kw').innerHTML = '<span class="ref-label">PEM参考：</span><span class="ref-badge" onclick="setValAndUpdate(\'capex_kw\',5000)">5000</span><span class="ref-badge" onclick="setValAndUpdate(\'capex_kw\',6000)">6000</span>';
+    document.getElementById('ref_q_elec').innerHTML = '<span class="ref-label">PEM参考：</span><span class="ref-badge" onclick="setVal(\'q_elec\',58)">58</span><span class="ref-badge" onclick="setVal(\'q_elec\',60)">60</span>';
+  }
+  updateCAPEX();
+}
+
+function setValAndUpdate(id, val) { setVal(id, val); updateCAPEX(); }
+
+function updateCAPEX() {
+  const pw = g('power_mw'), ck = g('capex_kw');
+  if (pw > 0 && ck > 0) {
+    const total = pw * 1000 * ck * 1.35 / 1e6; // ×1.35 for BoP+EPC
+    setVal('capex', total.toFixed(0));
+  }
+  updateScale();
+}
+
+function updateScale() {
+  const pw = g('power_mw'), fh = g('flh'), qe = g('q_elec');
+  if (pw > 0 && fh > 0 && qe > 0) {
+    const mh2 = pw * 1000 * fh / qe;
+    setVal('scale', Math.round(mh2));
+  }
+}
+
+function applyProvince() {
+  const p = document.getElementById('province-select').value;
+  if (!p) return;
+  const d = PROVINCE_DATA[p];
+  setVal('elec_p', d.elec); setVal('water_p', d.water); setVal('salary', d.salary);
+  document.getElementById('ref_elec').innerHTML  = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('elec_p',${d.elec})">${d.elec.toFixed(4)} 元/kWh</span>`;
+  document.getElementById('ref_water').innerHTML = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('water_p',${d.water})">${d.water.toFixed(2)} 元/吨</span>`;
+  document.getElementById('ref_salary').innerHTML= `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('salary',${d.salary})">${d.salary.toLocaleString()} 元/年</span>`;
+}
+
+function calculate() {
+  const capex = g('capex')*1e6, M = g('scale'), n = g('life');
+  if (!M||!capex||!n) { alert('请填写完整资本参数'); return; }
+  const crf = calcCRF(g('wacc'), n);
+  const capexKg = capex * crf / M;
+  const laborKg = g('staff') * g('salary') / M;
+  const maintKg = capex * g('opex_rate') / 100 / M;
+  const fixedKg = laborKg + maintKg;
+  const elecC  = g('elec_p') * g('q_elec');
+  const waterC = g('water_p') / 1000 * g('q_water');
+  const otherC = g('other');
+  const variable = elecC + waterC + otherC;
+  const lcoh = capexKg + fixedKg + variable;
+  showResult(lcoh, variable, capexKg, fixedKg, [
+    {name:'电力消耗',    value:elecC,   color:PIE_COLORS[1]},
+    {name:'工艺用水',    value:waterC,  color:PIE_COLORS[4]},
+    {name:'辅材/化学品', value:otherC,  color:PIE_COLORS[5]},
+    {name:'资本年化摊销',value:capexKg, color:PIE_COLORS[6]},
+    {name:'人工成本',    value:laborKg, color:PIE_COLORS[7]},
+    {name:'维护成本',    value:maintKg, color:PIE_COLORS[8]},
+  ]);
+}
+
+// Init
+updateCAPEX();
+</script>
+</body>
+</html>

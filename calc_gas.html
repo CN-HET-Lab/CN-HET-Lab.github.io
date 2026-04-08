@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>天然气制氢成本计算</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="shared.js"></script>
+</head>
+<body>
+<h2><i class="fas fa-fire"></i> 天然气制氢成本计算（SMR，LCOH）</h2>
+
+<div class="formula-box"><i class="fas fa-info-circle"></i>
+  <span>天然气水蒸气重整（SMR）工艺：天然气同时作为原料气和燃料，约占总成本70–87%。电耗较低，不需外购氧气。</span>
+</div>
+
+<div id="province-row"></div>
+
+<div class="calc-grid">
+  <div class="sec-label">资本参数</div>
+  <div class="input-group"><label>项目总投资 (百万元)</label>
+    <div class="input-wrapper"><input type="number" id="capex" value="240"></div>
+    <div class="ref-hint"><span class="ref-label">参考值（3000 m³/h规模）：</span><span class="ref-badge" onclick="setVal('capex',240)">240</span></div>
+  </div>
+  <div class="input-group"><label>折现率 WACC (%)</label>
+    <div class="input-wrapper"><input type="number" id="wacc" value="8" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('wacc',8)">8%</span><span class="ref-badge" onclick="setVal('wacc',10)">10%</span></div>
+  </div>
+  <div class="input-group"><label>项目寿命 (年)</label>
+    <div class="input-wrapper"><input type="number" id="life" value="20"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('life',20)">20年</span><span class="ref-badge" onclick="setVal('life',25)">25年</span></div>
+  </div>
+  <div class="input-group"><label>年制氢规模 (kg/年)</label>
+    <div class="input-wrapper"><input type="number" id="scale" value="24300000"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('scale',24300000)">2430万kg</span></div>
+  </div>
+  <div class="input-group"><label>年维护率 (% CAPEX/年)</label>
+    <div class="input-wrapper"><input type="number" id="opex_rate" value="3" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('opex_rate',3)">3%</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">省级价格参数</div>
+
+  <div class="input-group"><label>天然气价格 (元/m³) — 原料+燃料</label>
+    <div class="input-wrapper"><input type="number" id="gas_p" placeholder="选省份自动填入" step="0.01"></div>
+    <div class="ref-hint" id="ref_gas"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('gas_p',2.8)">2.8</span></div>
+  </div>
+  <div class="input-group"><label>工业电价 (元/kWh)</label>
+    <div class="input-wrapper"><input type="number" id="elec_p" placeholder="选省份自动填入" step="0.001"></div>
+    <div class="ref-hint" id="ref_elec"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('elec_p',0.699)">0.699</span></div>
+  </div>
+  <div class="input-group"><label>工业水价 (元/吨)</label>
+    <div class="input-wrapper"><input type="number" id="water_p" placeholder="选省份自动填入" step="0.1"></div>
+    <div class="ref-hint" id="ref_water"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('water_p',5.32)">5.32</span></div>
+  </div>
+  <div class="input-group"><label>催化剂/辅材成本 (元/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="cat_p" value="0.30" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('cat_p',0.30)">0.30 元/kg H₂</span></div>
+    <div class="ref-hint"><span class="ref-badge" onclick="setVal('cat_p',0.30)">0.30</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">人工成本（省级）</div>
+  <div class="input-group"><label>员工数量 (人)</label>
+    <div class="input-wrapper"><input type="number" id="staff" value="40"></div>
+  </div>
+  <div class="input-group"><label>年均工资 (元/人/年)</label>
+    <div class="input-wrapper"><input type="number" id="salary" placeholder="选省份自动填入"></div>
+    <div class="ref-hint" id="ref_salary"><span class="ref-label">全国均值：</span><span class="ref-badge" onclick="setVal('salary',113735)">113,735</span></div>
+  </div>
+
+  <hr class="sec-divider">
+  <div class="sec-label">工艺消耗系数（全国统一，SMR工艺）</div>
+
+  <div class="input-group"><label>天然气耗量（原料，Nm³/kg H₂）</label>
+    <div class="input-wrapper"><input type="number" id="q_gas_feed" value="2.8" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_gas_feed',2.8)">2.8 Nm³/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>天然气耗量（燃料，Nm³/kg H₂）</label>
+    <div class="input-wrapper"><input type="number" id="q_gas_fuel" value="0.7" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_gas_fuel',0.7)">0.7 Nm³/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>水耗系数 (kg/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="q_water" value="6.0" step="0.1"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_water',6.0)">6.0 kg/kg H₂</span></div>
+  </div>
+  <div class="input-group"><label>电耗系数 (kWh/kg H₂)</label>
+    <div class="input-wrapper"><input type="number" id="q_elec" value="0.5" step="0.01"></div>
+    <div class="ref-hint"><span class="ref-label">默认值：</span><span class="ref-badge" onclick="setVal('q_elec',0.5)">0.5 kWh/kg H₂</span></div>
+  </div>
+</div>
+
+<button class="calc-btn" onclick="calculate()"><i class="fas fa-calculator" style="margin-right:7px"></i>计算 LCOH</button>
+
+<div class="result-section" id="result-section">
+  <div class="result-top">
+    <div class="result-main"><div class="rl">天然气制氢 LCOH</div><div class="rv" id="result-lcoh">—</div><div class="ru">元 / kg H₂</div></div>
+    <div class="result-sub-cards">
+      <div class="result-sub"><span class="sl">变动原料成本</span><span class="sv" id="result-variable">—</span></div>
+      <div class="result-sub"><span class="sl">资本年化摊销</span><span class="sv" id="result-capex">—</span></div>
+      <div class="result-sub"><span class="sl">固定运营成本摊销</span><span class="sv" id="result-fixed">—</span></div>
+    </div>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">各成本项占 LCOH 的比例</div>
+    <div class="chart-inner">
+      <div class="chart-canvas-wrap"><canvas id="costPieChart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('province-row').innerHTML = `
+<div class="province-selector-row">
+  <label><i class="fas fa-map-marker-alt"></i>&nbsp; 选择省份</label>
+  <select class="province-select" id="province-select" onchange="applyProvince()">
+    <option value="">-- 请选择省份（自动填入参考值）--</option>
+    ${Object.keys(PROVINCE_DATA).map(p=>`<option value="${p}">${p}</option>`).join('')}
+  </select>
+  <span class="province-hint">选择后各项参考值自动填入，可自行修改</span>
+</div>`;
+
+function applyProvince() {
+  const p = document.getElementById('province-select').value;
+  if (!p) return;
+  const d = PROVINCE_DATA[p];
+  setVal('gas_p', d.gas); setVal('elec_p', d.elec);
+  setVal('water_p', d.water); setVal('salary', d.salary);
+  document.getElementById('ref_gas').innerHTML = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('gas_p',${d.gas})">${d.gas.toFixed(2)} 元/m³</span>`;
+  document.getElementById('ref_elec').innerHTML = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('elec_p',${d.elec})">${d.elec.toFixed(4)} 元/kWh</span>`;
+  document.getElementById('ref_water').innerHTML = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('water_p',${d.water})">${d.water.toFixed(2)} 元/吨</span>`;
+  document.getElementById('ref_salary').innerHTML = `<span class="ref-label">${p}：</span><span class="ref-badge" onclick="setVal('salary',${d.salary})">${d.salary.toLocaleString()} 元/年</span>`;
+}
+
+function calculate() {
+  const capex = g('capex')*1e6, M = g('scale'), n = g('life');
+  if (!M||!capex||!n) { alert('请填写完整资本参数'); return; }
+  const crf = calcCRF(g('wacc'), n);
+  const capexKg = capex * crf / M;
+  const laborKg = g('staff') * g('salary') / M;
+  const maintKg = capex * g('opex_rate') / 100 / M;
+  const fixedKg = laborKg + maintKg;
+  // 天然气价格单位：元/m³，天然气密度约0.72kg/m³
+  const gasFeedC = g('gas_p') * g('q_gas_feed');
+  const gasFuelC = g('gas_p') * g('q_gas_fuel');
+  const elecC   = g('elec_p') * g('q_elec');
+  const waterC  = g('water_p') / 1000 * g('q_water');
+  const catC    = g('cat_p');
+  const variable = gasFeedC + gasFuelC + elecC + waterC + catC;
+  const lcoh = capexKg + fixedKg + variable;
+  showResult(lcoh, variable, capexKg, fixedKg, [
+    {name:'天然气（原料）', value:gasFeedC, color:PIE_COLORS[0]},
+    {name:'天然气（燃料）', value:gasFuelC, color:PIE_COLORS[1]},
+    {name:'电力消耗',      value:elecC,    color:PIE_COLORS[2]},
+    {name:'工艺用水',      value:waterC,   color:PIE_COLORS[3]},
+    {name:'催化剂/辅材',   value:catC,     color:PIE_COLORS[4]},
+    {name:'资本年化摊销',  value:capexKg,  color:PIE_COLORS[5]},
+    {name:'人工成本',      value:laborKg,  color:PIE_COLORS[6]},
+    {name:'维护成本',      value:maintKg,  color:PIE_COLORS[7]},
+  ]);
+}
+</script>
+</body>
+</html>

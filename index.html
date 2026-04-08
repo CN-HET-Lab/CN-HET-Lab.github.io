@@ -100,9 +100,14 @@ body{display:flex;min-height:100vh;background:#f0f4fb;}
         <li><a href="#" onclick="loadCalc('calc_gas_ccus.html','天然气制氢+CCUS成本','耦合CCUS制氢',this);return false;">天然气制氢+CCUS</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#" onclick="loadCalc('calc_electrolysis.html','电解水制氢成本','绿氢',this);return false;">
-        <i class="fas fa-bolt"></i>电解水制氢</a>
+    <li id="nav-electrolysis">
+      <a href="#" onclick="toggleSub('sub-electrolysis',this);return false;">
+        <i class="fas fa-bolt"></i>电解水制氢<i class="fas fa-chevron-right chevron"></i>
+      </a>
+      <ul class="sub" id="sub-electrolysis">
+        <li><a href="#" onclick="loadCalc('calc_alk.html','碱性电解水制氢（ALK）','电解水制氢',this);return false;">碱性电解水（ALK）</a></li>
+        <li><a href="#" onclick="loadCalc('calc_pem.html','质子交换膜制氢（PEM）','电解水制氢',this);return false;">质子交换膜（PEM）</a></li>
+      </ul>
     </li>
     <li>
       <a href="#" onclick="showPlaceholder('氢燃料电池车项目');return false;"><i class="fas fa-car-battery"></i>氢燃料电池车</a>
@@ -141,7 +146,7 @@ body{display:flex;min-height:100vh;background:#f0f4fb;}
           <p>在化石燃料制氢基础上增加碳捕集与封存，评估蓝氢成本</p>
           <button class="btn-enter">进入分析</button>
         </div>
-        <div class="project-card" onclick="loadCalcFromCard('calc_electrolysis.html','电解水制氢成本','绿氢')">
+        <div class="project-card" onclick="expandAndLoad('sub-electrolysis','nav-electrolysis','calc_alk.html','碱性电解水制氢（ALK）','电解水制氢')">
           <div class="icon"><i class="fas fa-bolt"></i></div>
           <h3>电解水制氢（绿氢）</h3>
           <p>碱性（ALK）/ 质子交换膜（PEM）电解，省级电价驱动测算</p>
